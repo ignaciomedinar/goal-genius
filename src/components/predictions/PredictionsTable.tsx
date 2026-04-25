@@ -41,6 +41,7 @@ const PredictionsTable = () => {
   const [selectedCountry, setSelectedCountry] = useState<string>('all');
   const [sortField, setSortField] = useState<SortField | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(50);
 
@@ -71,6 +72,28 @@ const PredictionsTable = () => {
   const leagues = useMemo(() => [...new Set(predictions.map(p => p.league_name).filter(Boolean))].sort(), [predictions]);
   const countries = useMemo(() => [...new Set(predictions.map(p => p.country_name).filter(Boolean))].sort(), [predictions]);
 
+  // Sorted unique dates (YYYY-MM-DD keys) derived from the data.
+  // The week runs Mon–Sun; any Sunday that appears before the first Monday
+  // belongs to the previous week and is excluded.
+  const availableDates = useMemo(() => {
+    const dateKeys = predictions
+      .map(p => p.date_time ? new Date(p.date_time).toISOString().slice(0, 10) : null)
+      .filter((d): d is string => d !== null);
+    const unique = [...new Set(dateKeys)].sort();
+
+    const firstMonday = unique.find(d => new Date(d + 'T12:00:00').getDay() === 1);
+    return firstMonday ? unique.filter(d => d >= firstMonday) : unique;
+  }, [predictions]);
+
+  const toggleDate = (dateKey: string) => {
+    setSelectedDates(prev => {
+      const next = new Set(prev);
+      if (next.has(dateKey)) next.delete(dateKey);
+      else next.add(dateKey);
+      return next;
+    });
+  };
+
   const liabilityOrder = (name: string) => {
     const key = name?.toLowerCase();
     if (key === 'high') return 3;
@@ -90,8 +113,14 @@ const PredictionsTable = () => {
       
       const matchesLeague = selectedLeague === 'all' || prediction.league_name === selectedLeague;
       const matchesCountry = selectedCountry === 'all' || prediction.country_name === selectedCountry;
+
+      const matchesDate = selectedDates.size === 0 || (
+        prediction.date_time
+          ? selectedDates.has(new Date(prediction.date_time).toISOString().slice(0, 10))
+          : false
+      );
       
-      return matchesSearch && matchesLeague && matchesCountry;
+      return matchesSearch && matchesLeague && matchesCountry && matchesDate;
     });
 
     if (sortField === null) {
@@ -143,7 +172,7 @@ const PredictionsTable = () => {
     }
 
     return filtered;
-  }, [predictions, searchTerm, selectedLeague, selectedCountry, sortField, sortDirection]);
+  }, [predictions, searchTerm, selectedLeague, selectedCountry, selectedDates, sortField, sortDirection]);
 
   const totalPages = Math.ceil(filteredAndSortedPredictions.length / itemsPerPage);
   const paginatedResults = useMemo(() => {
@@ -154,7 +183,7 @@ const PredictionsTable = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedLeague, selectedCountry, itemsPerPage]);
+  }, [searchTerm, selectedLeague, selectedCountry, selectedDates, itemsPerPage]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -166,24 +195,45 @@ const PredictionsTable = () => {
   };
 
   const exportToCSV = () => {
-    const headers = ['League', 'Country', 'Match', 'Date', 'Time', 'Prediction', 'Actual', 'Status', 'Confidence', 'Liability', 'Avg H', 'Avg X', 'Avg A'];
+    const formatDateTimeCSV = (dt: string) => {
+      const d = new Date(dt);
+      const yyyy = d.getFullYear();
+      const mm   = String(d.getMonth() + 1).padStart(2, '0');
+      const dd   = String(d.getDate()).padStart(2, '0');
+      const hh   = String(d.getHours()).padStart(2, '0');
+      const min  = String(d.getMinutes()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+    };
+
+    const predictedVictor = (pred: Prediction) => {
+      if (pred.phg > pred.pag) return 'home';
+      if (pred.pag > pred.phg) return 'away';
+      return 'draw';
+    };
+
+    const headers = [
+      'Country', 'League', 'Date Time',
+      'Home Team', 'Home Predicted Goals', 'Away Predicted Goals', 'Away Team',
+      'Predicted Victor', 'Probability', 'Liability',
+    ];
+
     const csvData = filteredAndSortedPredictions.map(pred => [
-      pred.league_name,
       pred.country_name,
-      `${pred.home_team} vs ${pred.away_team}`,
-      formatDate(pred.date_time),
-      formatTime(pred.date_time),
-      `${pred.phg}-${pred.pag}`,
-      pred.has_actual_result ? `${pred.goals_home}-${pred.goals_away}` : 'Not played',
-      pred.has_actual_result ? (pred.is_correct_prediction ? 'Correct' : 'Wrong') : 'Pending',
+      pred.league_name,
+      pred.date_time ? formatDateTimeCSV(pred.date_time) : '',
+      pred.home_team,
+      pred.phg,
+      pred.pag,
+      pred.away_team,
+      predictedVictor(pred),
       formatPercentage(pred.max_prob * 100),
       pred.liability_name,
-      pred.avg_home_odds?.toFixed(2) ?? '',
-      pred.avg_draw_odds?.toFixed(2) ?? '',
-      pred.avg_away_odds?.toFixed(2) ?? '',
     ]);
 
-    const csv = [headers, ...csvData].map(row => row.join(',')).join('\n');
+    const csv = [headers, ...csvData]
+      .map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -276,6 +326,40 @@ const PredictionsTable = () => {
           <span className="text-sm text-muted-foreground">predictions</span>
         </div>
       </div>
+
+      {/* Date chips — only shown when there is more than one unique date */}
+      {availableDates.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">📅 Date:</span>
+          {availableDates.map(dateKey => {
+            const label = new Date(dateKey + 'T12:00:00').toLocaleDateString('en-GB', {
+              weekday: 'short', month: 'short', day: 'numeric',
+            });
+            const active = selectedDates.has(dateKey);
+            return (
+              <button
+                key={dateKey}
+                onClick={() => toggleDate(dateKey)}
+                className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                  active
+                    ? 'bg-primary text-white border-primary'
+                    : 'bg-background text-foreground border-border hover:bg-card'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+          {selectedDates.size > 0 && (
+            <button
+              onClick={() => setSelectedDates(new Set())}
+              className="px-3 py-1 rounded-full text-sm border border-border bg-background text-muted-foreground hover:bg-card transition-colors"
+            >
+              ✕ Clear
+            </button>
+          )}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center items-center py-12">
