@@ -1,145 +1,85 @@
-'use client';
-
-import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import { getMatchDetails, getMatchOdds, getTeamLastGames } from '@/lib/database';
 import { formatDate, formatTime, formatPercentage } from '@/lib/utils';
 
-interface MatchDetail {
-  match_id: string;
-  home_team: string;
-  away_team: string;
-  home_team_id: number;
-  away_team_id: number;
-  league_id: number;
-  league_name: string;
-  country_name: string;
-  flag_url: string | null;
-  phg: number;
-  pag: number;
-  goals_home: number | null;
-  goals_away: number | null;
-  date_time: string;
-  max_prob: number;
-  bet_name: string;
-  liability_name: string;
-  prediction_type: 'home_win' | 'away_win' | 'draw';
-  actual_result: 'home_win' | 'away_win' | 'draw' | 'pending';
-  has_actual_result: boolean;
-  is_correct_prediction: boolean;
-}
+type Props = { params: Promise<{ id: string }> };
 
-interface BookmakerOdds {
-  bookmaker_name: string;
-  home_odds: number;
-  draw_odds: number;
-  away_odds: number;
-}
-
-interface TeamLastGame {
-  match_id: string;
-  league_name: string;
-  country_name: string;
-  date_time: string;
-  home_team: string;
-  away_team: string;
-  goals_home: number;
-  goals_away: number;
-  prediction_is_correct: boolean | null;
-}
-
-export default function MatchDetailPage() {
-  const params = useParams();
-  const matchId = params.id as string;
-  const [match, setMatch] = useState<MatchDetail | null>(null);
-  const [odds, setOdds] = useState<BookmakerOdds[]>([]);
-  const [homeTeamGames, setHomeTeamGames] = useState<TeamLastGame[]>([]);
-  const [awayTeamGames, setAwayTeamGames] = useState<TeamLastGame[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchMatchDetails = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch match details
-        const matchResponse = await fetch(`/api/matches/${matchId}`);
-        if (matchResponse.ok) {
-          const matchData = await matchResponse.json();
-          setMatch(matchData.data);
-          
-          // Once we have match data, fetch last games for both teams
-          const homeGamesResponse = await fetch(
-            `/api/matches/${matchId}/last-games?teamId=${matchData.data.home_team_id}&leagueId=${matchData.data.league_id}`
-          );
-          if (homeGamesResponse.ok) {
-            const homeGamesData = await homeGamesResponse.json();
-            setHomeTeamGames(homeGamesData.data || []);
-          }
-
-          const awayGamesResponse = await fetch(
-            `/api/matches/${matchId}/last-games?teamId=${matchData.data.away_team_id}&leagueId=${matchData.data.league_id}`
-          );
-          if (awayGamesResponse.ok) {
-            const awayGamesData = await awayGamesResponse.json();
-            setAwayTeamGames(awayGamesData.data || []);
-          }
-        }
-
-        // Fetch bookmaker odds
-        const oddsResponse = await fetch(`/api/matches/${matchId}/odds`);
-        if (oddsResponse.ok) {
-          const oddsData = await oddsResponse.json();
-          console.log('Odds data:', oddsData);
-          setOdds(oddsData.data || []);
-        } else {
-          console.error('Failed to fetch odds:', oddsResponse.status);
-        }
-      } catch (error) {
-        console.error('Error fetching match details:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (matchId) {
-      fetchMatchDetails();
-    }
-  }, [matchId]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background py-8">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="animate-pulse space-y-6">
-              <div className="h-8 bg-muted rounded w-1/3"></div>
-              <div className="h-64 bg-muted rounded"></div>
-              <div className="h-48 bg-muted rounded"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const match = await getMatchDetails(id);
 
   if (!match) {
-    return (
-      <div className="min-h-screen bg-background py-8">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Match Not Found</h1>
-            <p className="text-muted-foreground mb-6">The match details could not be loaded.</p>
-            <Link href="/predictions" className="text-primary hover:underline">
-              ← Back to Predictions
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+    return { title: 'Match Not Found - Goal Genius' };
   }
+
+  const predictionLabel =
+    match.prediction_type === 'home_win'
+      ? `${match.home_team} win`
+      : match.prediction_type === 'away_win'
+      ? `${match.away_team} win`
+      : 'Draw';
+
+  return {
+    title: `${match.home_team} vs ${match.away_team} Prediction - ${match.league_name} | Goal Genius`,
+    description: `AI prediction for ${match.home_team} vs ${match.away_team} (${match.league_name}): ${predictionLabel} with ${formatPercentage(match.max_prob * 100)} confidence. View bookmaker odds and recent form.`,
+    openGraph: {
+      title: `${match.home_team} vs ${match.away_team} - ${match.league_name} Prediction`,
+      description: `Predicted result: ${predictionLabel} · ${formatPercentage(match.max_prob * 100)} confidence · ${formatDate(match.date_time)}`,
+      url: `https://www.goal-genius.net/match/${id}`,
+    },
+  };
+}
+
+export default async function MatchDetailPage({ params }: Props) {
+  const { id: matchId } = await params;
+
+  const [match, odds] = await Promise.all([
+    getMatchDetails(matchId),
+    getMatchOdds(matchId),
+  ]);
+
+  if (!match) {
+    notFound();
+  }
+
+  const [resolvedHomeGames, resolvedAwayGames] = await Promise.all([
+    getTeamLastGames(match.home_team_id, match.league_id, 5),
+    getTeamLastGames(match.away_team_id, match.league_id, 5),
+  ]);
+
+  const predictionLabel =
+    match.prediction_type === 'home_win'
+      ? `${match.home_team} Win`
+      : match.prediction_type === 'away_win'
+      ? `${match.away_team} Win`
+      : 'Draw';
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: `${match.home_team} vs ${match.away_team}`,
+    startDate: match.date_time,
+    location: {
+      '@type': 'Place',
+      name: match.league_name,
+      address: { '@type': 'PostalAddress', addressCountry: match.country_name },
+    },
+    competitor: [
+      { '@type': 'SportsTeam', name: match.home_team },
+      { '@type': 'SportsTeam', name: match.away_team },
+    ],
+    description: `${match.league_name} match prediction: ${predictionLabel} with ${formatPercentage(match.max_prob * 100)} confidence.`,
+  };
 
   return (
     <div className="min-h-screen bg-background py-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
@@ -155,12 +95,12 @@ export default function MatchDetailPage() {
               )}
               <span className="text-muted-foreground">{match.league_name}</span>
             </div>
-            
+
             <div className="flex items-center justify-between max-w-2xl mx-auto">
               <div className="text-center flex-1">
-                <h2 className="text-2xl font-bold text-foreground">{match.home_team}</h2>
+                <h1 className="text-2xl font-bold text-foreground">{match.home_team}</h1>
               </div>
-              
+
               <div className="text-center mx-8">
                 <div className="text-4xl font-bold text-foreground mb-2">
                   {match.phg} - {match.pag}
@@ -186,19 +126,22 @@ export default function MatchDetailPage() {
               <div>🕒 {formatTime(match.date_time)}</div>
               <div>📈 {formatPercentage(match.max_prob * 100)} confidence</div>
             </div>
-            
+
             {/* Status and Liability */}
             <div className="flex justify-center gap-4 mt-4">
-              <span className={`inline-flex px-3 py-1 rounded text-xs font-medium ${
-                match.liability_name?.toLowerCase() === 'high' 
-                  ? 'bg-green-500/10 text-green-500'
-                  : match.liability_name?.toLowerCase() === 'mid' || match.liability_name?.toLowerCase() === 'medium'
-                  ? 'bg-yellow-500/10 text-yellow-500'
-                  : 'bg-red-500/10 text-red-500'
-              }`}>
+              <span
+                className={`inline-flex px-3 py-1 rounded text-xs font-medium ${
+                  match.liability_name?.toLowerCase() === 'high'
+                    ? 'bg-green-500/10 text-green-500'
+                    : match.liability_name?.toLowerCase() === 'mid' ||
+                      match.liability_name?.toLowerCase() === 'medium'
+                    ? 'bg-yellow-500/10 text-yellow-500'
+                    : 'bg-red-500/10 text-red-500'
+                }`}
+              >
                 Liability: {match.liability_name || 'N/A'}
               </span>
-              
+
               {match.has_actual_result ? (
                 match.is_correct_prediction ? (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-green-500/10 text-green-500">
@@ -248,105 +191,70 @@ export default function MatchDetailPage() {
             )}
           </div>
 
-          {/* Last 5 Games */}
+          {/* Recent Form */}
           <div className="bg-card border border-border rounded-xl p-6">
             <h3 className="text-xl font-bold text-foreground mb-4">📋 Recent Form</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Home Team Last Games */}
-              <div>
-                <h4 className="font-semibold text-foreground mb-3">{match.home_team}</h4>
-                {homeTeamGames.length > 0 ? (
-                  <div className="space-y-3">
-                    {homeTeamGames.map((game, index) => {
-                      const isHome = game.home_team === match.home_team;
-                      const teamGoals = isHome ? game.goals_home : game.goals_away;
-                      const opponentGoals = isHome ? game.goals_away : game.goals_home;
-                      const result = teamGoals > opponentGoals ? 'W' : teamGoals < opponentGoals ? 'L' : 'D';
-                      const resultColor = result === 'W' ? 'bg-green-500/10 text-green-500' : 
-                                         result === 'L' ? 'bg-red-500/10 text-red-500' : 
-                                         'bg-yellow-500/10 text-yellow-500';
-                      
-                      return (
-                        <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                          <div className="flex-1">
-                            <div className="text-sm font-medium">
-                              {game.home_team} vs {game.away_team}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {formatDate(game.date_time)}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold">
-                              {game.goals_home} - {game.goals_away}
-                            </span>
-                            <span className={`px-2 py-1 rounded text-xs font-bold ${resultColor}`}>
-                              {result}
-                            </span>
-                            {game.prediction_is_correct !== null && (
-                              <span className="text-lg" title={game.prediction_is_correct ? 'Prediction correct' : 'Prediction wrong'}>
-                                {game.prediction_is_correct ? '✅' : '❌'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm">No recent games available</p>
-                )}
-              </div>
-
-              {/* Away Team Last Games */}
-              <div>
-                <h4 className="font-semibold text-foreground mb-3">{match.away_team}</h4>
-                {awayTeamGames.length > 0 ? (
-                  <div className="space-y-3">
-                    {awayTeamGames.map((game, index) => {
-                      const isHome = game.home_team === match.away_team;
-                      const teamGoals = isHome ? game.goals_home : game.goals_away;
-                      const opponentGoals = isHome ? game.goals_away : game.goals_home;
-                      const result = teamGoals > opponentGoals ? 'W' : teamGoals < opponentGoals ? 'L' : 'D';
-                      const resultColor = result === 'W' ? 'bg-green-500/10 text-green-500' : 
-                                         result === 'L' ? 'bg-red-500/10 text-red-500' : 
-                                         'bg-yellow-500/10 text-yellow-500';
-                      
-                      return (
-                        <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                          <div className="flex-1">
-                            <div className="text-sm font-medium">
-                              {game.home_team} vs {game.away_team}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {formatDate(game.date_time)}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold">
-                              {game.goals_home} - {game.goals_away}
-                            </span>
-                            <span className={`px-2 py-1 rounded text-xs font-bold ${resultColor}`}>
-                              {result}
-                            </span>
-                            {game.prediction_is_correct !== null && (
-                              <span className="text-lg" title={game.prediction_is_correct ? 'Prediction correct' : 'Prediction wrong'}>
-                                {game.prediction_is_correct ? '✅' : '❌'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm">No recent games available</p>
-                )}
-              </div>
+              <TeamForm teamName={match.home_team} games={resolvedHomeGames} />
+              <TeamForm teamName={match.away_team} games={resolvedAwayGames} />
             </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TeamForm({
+  teamName,
+  games,
+}: {
+  teamName: string;
+  games: Awaited<ReturnType<typeof getTeamLastGames>>;
+}) {
+  return (
+    <div>
+      <h4 className="font-semibold text-foreground mb-3">{teamName}</h4>
+      {games.length > 0 ? (
+        <div className="space-y-3">
+          {games.map((game, index) => {
+            const isHome = game.home_team === teamName;
+            const teamGoals = isHome ? game.goals_home : game.goals_away;
+            const opponentGoals = isHome ? game.goals_away : game.goals_home;
+            const result = teamGoals > opponentGoals ? 'W' : teamGoals < opponentGoals ? 'L' : 'D';
+            const resultColor =
+              result === 'W'
+                ? 'bg-green-500/10 text-green-500'
+                : result === 'L'
+                ? 'bg-red-500/10 text-red-500'
+                : 'bg-yellow-500/10 text-yellow-500';
+
+            return (
+              <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div className="flex-1">
+                  <div className="text-sm font-medium">
+                    {game.home_team} vs {game.away_team}
+                  </div>
+                  <div className="text-xs text-muted-foreground">{formatDate(game.date_time)}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold">
+                    {game.goals_home} - {game.goals_away}
+                  </span>
+                  <span className={`px-2 py-1 rounded text-xs font-bold ${resultColor}`}>{result}</span>
+                  {game.prediction_is_correct !== null && (
+                    <span title={game.prediction_is_correct ? 'Prediction correct' : 'Prediction wrong'}>
+                      {game.prediction_is_correct ? '✅' : '❌'}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-sm">No recent games available</p>
+      )}
     </div>
   );
 }
