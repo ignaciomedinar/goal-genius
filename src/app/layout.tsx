@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   description:
     "Get accurate football match predictions with AI-powered analysis. Track accuracy, view detailed team statistics, and access comprehensive match insights for all major tournaments.",
   keywords:
-    "football predictions, soccer predictions, match predictions, sports betting, football analysis, soccer analysis",
+    "football predictions today, soccer match predictions, Premier League predictions, Champions League predictions, football betting tips, free football predictions, AI football analysis, soccer predictions this week, match outcome predictions, football statistics",
   authors: [{ name: "Goal Genius" }],
   creator: "Goal Genius",
   publisher: "Goal Genius",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     siteName: "Goal Genius",
     images: [
       {
-        url: "../public/logo.png",
+        url: "/logo.png",
         width: 800,
         height: 600,
         alt: "Goal Genius Logo",
@@ -61,9 +61,9 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  verification: {
-    google: "your-google-verification-code",
-  },
+  // verification: {
+  //   google: "PASTE_YOUR_CODE_HERE",
+  // },
 };
 
 export default function RootLayout({
@@ -77,6 +77,23 @@ export default function RootLayout({
         className={`${inter.variable} ${poppins.variable} antialiased min-h-screen bg-background`}
         suppressHydrationWarning={true}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "Goal Genius",
+              url: "https://www.goal-genius.net",
+              description:
+                "AI-powered football match predictions with accuracy tracking for all major leagues worldwide.",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://www.goal-genius.net/predictions",
+              },
+            }),
+          }}
+        />
         {/* Google Analytics */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-WRCQ41KVM8"

@@ -3,9 +3,11 @@ import ResultsTable from '@/components/results/ResultsTable';
 import ResultsHeader from '@/components/results/ResultsHeader';
 
 export const metadata: Metadata = {
-  title: 'Match Results & Accuracy - Goal Genius',
-  description: 'View historical football match results with prediction accuracy analysis. Filter by week, league, and track our performance over time.',
-  keywords: 'football results, prediction accuracy, match outcomes, historical data',
+  title: "Football Prediction Results & Accuracy History - Goal Genius",
+  description:
+    "Check our historical football prediction results. Filter by league and week to see how our AI model performed — full transparency, no cherry-picking.",
+  keywords:
+    "football prediction results, soccer prediction accuracy, football tips history, prediction track record, AI football model accuracy, verified football predictions",
 };
 
 export default async function ResultsPage({

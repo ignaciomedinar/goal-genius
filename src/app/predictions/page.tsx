@@ -3,9 +3,11 @@ import PredictionsTable from '@/components/predictions/PredictionsTable';
 import PredictionsHeader from '@/components/predictions/PredictionsHeader';
 
 export const metadata: Metadata = {
-  title: 'Football Predictions - Goal Genius',
-  description: 'View current week football match predictions with detailed analysis, probability scores, and exportable data for all major leagues.',
-  keywords: 'football predictions, match predictions, soccer betting tips, football analysis',
+  title: "This Week's Football Predictions - Goal Genius",
+  description:
+    "Free AI-powered football match predictions for this week. Premier League, Champions League, La Liga, Serie A and more — with probability scores and confidence ratings.",
+  keywords:
+    "football predictions this week, soccer predictions today, Premier League predictions, Champions League predictions, La Liga predictions, free football tips, AI match predictions, soccer betting analysis",
 };
 
 export default function PredictionsPage() {
