@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { formatPercentage } from '@/lib/utils';
 
 interface KpiStats {
@@ -245,9 +245,7 @@ export default function AccuracyPage() {
                         <th className="text-left p-4 font-semibold text-foreground text-sm">League</th>
                         <th className="text-left p-4 font-semibold text-foreground text-sm">Country</th>
                         <th className="text-center p-4 font-semibold text-foreground text-sm">Overall</th>
-                        <th className="text-center p-4 font-semibold text-foreground text-sm">
-                          Top 10 ▼
-                        </th>
+                        <th className="text-center p-4 font-semibold text-foreground text-sm">Top 10 ▼</th>
                         <th className="text-center p-4 font-semibold text-foreground text-sm">Matches</th>
                         <th className="text-center p-4 font-semibold text-foreground text-sm">Correct</th>
                       </tr>
@@ -275,9 +273,7 @@ export default function AccuracyPage() {
                               <span className="text-muted-foreground">{index + 1}</span>
                             )}
                           </td>
-                          <td className="p-4 font-semibold text-foreground text-sm">
-                            {stat.league_name}
-                          </td>
+                          <td className="p-4 font-semibold text-foreground text-sm">{stat.league_name}</td>
                           <td className="p-4 text-muted-foreground text-sm">{stat.country_name}</td>
                           <td className="p-4 text-center font-semibold text-primary text-sm">
                             {formatPercentage(Number(stat.accuracy_percentage))}
@@ -315,40 +311,24 @@ export default function AccuracyPage() {
                 Performance by Confidence Tier
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto text-sm">
-                Accuracy generally increases as confidence rises. High-liability picks are our
-                most reliable.
+                Accuracy generally increases as confidence rises. High-liability picks are our most reliable.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-card border border-green-500/30 rounded-xl p-6 text-center">
-                <div className="inline-flex px-3 py-1 bg-green-500/10 text-green-500 rounded text-sm font-semibold mb-3">
-                  High
-                </div>
+                <div className="inline-flex px-3 py-1 bg-green-500/10 text-green-500 rounded text-sm font-semibold mb-3">High</div>
                 <div className="text-4xl font-bold font-display text-green-500 mb-1">Best</div>
-                <p className="text-sm text-muted-foreground">
-                  Highest model confidence. These picks historically land most often. Start here
-                  for the most reliable predictions.
-                </p>
+                <p className="text-sm text-muted-foreground">Highest model confidence. These picks historically land most often.</p>
               </div>
               <div className="bg-card border border-yellow-500/30 rounded-xl p-6 text-center">
-                <div className="inline-flex px-3 py-1 bg-yellow-500/10 text-yellow-500 rounded text-sm font-semibold mb-3">
-                  Mid
-                </div>
+                <div className="inline-flex px-3 py-1 bg-yellow-500/10 text-yellow-500 rounded text-sm font-semibold mb-3">Mid</div>
                 <div className="text-4xl font-bold font-display text-yellow-500 mb-1">Good</div>
-                <p className="text-sm text-muted-foreground">
-                  Solid confidence with some variance. Worth considering but carry more
-                  uncertainty than High-liability picks.
-                </p>
+                <p className="text-sm text-muted-foreground">Solid confidence with some variance. Worth considering but carry more uncertainty.</p>
               </div>
               <div className="bg-card border border-red-500/30 rounded-xl p-6 text-center">
-                <div className="inline-flex px-3 py-1 bg-red-500/10 text-red-500 rounded text-sm font-semibold mb-3">
-                  Low
-                </div>
+                <div className="inline-flex px-3 py-1 bg-red-500/10 text-red-500 rounded text-sm font-semibold mb-3">Low</div>
                 <div className="text-4xl font-bold font-display text-red-500 mb-1">Caution</div>
-                <p className="text-sm text-muted-foreground">
-                  Lower confidence predictions. Higher variance outcomes. Treat with extra
-                  scepticism.
-                </p>
+                <p className="text-sm text-muted-foreground">Lower confidence predictions. Higher variance outcomes. Treat with extra scepticism.</p>
               </div>
             </div>
           </div>
@@ -362,8 +342,7 @@ export default function AccuracyPage() {
             Explore the full results archive
           </h2>
           <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-            Browse weekly results, filter by league or confidence tier, and export data for
-            your own analysis.
+            Browse weekly results, filter by league or confidence tier, and export data for your own analysis.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

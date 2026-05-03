@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations, useLocale } from 'next-intl';
 import { formatDate, formatTime, formatPercentage } from '@/lib/utils';
 
 interface Prediction {
@@ -34,6 +34,8 @@ type SortDirection = 'asc' | 'desc';
 
 const PredictionsTable = () => {
   const router = useRouter();
+  const t = useTranslations('predictionsTable');
+  const locale = useLocale();
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,36 +53,28 @@ const PredictionsTable = () => {
       try {
         const response = await fetch('/api/matches/current-week');
         const result = await response.json();
-        
         if (result.success) {
           setPredictions(result.data);
         } else {
-          console.error('Failed to fetch predictions:', result.error);
           setPredictions([]);
         }
       } catch (error) {
-        console.error('Error fetching predictions:', error);
         setPredictions([]);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchPredictions();
   }, []);
 
   const leagues = useMemo(() => [...new Set(predictions.map(p => p.league_name).filter(Boolean))].sort(), [predictions]);
   const countries = useMemo(() => [...new Set(predictions.map(p => p.country_name).filter(Boolean))].sort(), [predictions]);
 
-  // Sorted unique dates (YYYY-MM-DD keys) derived from the data.
-  // The week runs Mon–Sun; any Sunday that appears before the first Monday
-  // belongs to the previous week and is excluded.
   const availableDates = useMemo(() => {
     const dateKeys = predictions
       .map(p => p.date_time ? new Date(p.date_time).toISOString().slice(0, 10) : null)
       .filter((d): d is string => d !== null);
     const unique = [...new Set(dateKeys)].sort();
-
     const firstMonday = unique.find(d => new Date(d + 'T12:00:00').getDay() === 1);
     return firstMonday ? unique.filter(d => d >= firstMonday) : unique;
   }, [predictions]);
@@ -105,26 +99,21 @@ const PredictionsTable = () => {
   const filteredAndSortedPredictions = useMemo(() => {
     let filtered = predictions.filter(prediction => {
       if (!prediction.home_team || !prediction.away_team) return false;
-
-      const matchesSearch = searchTerm === '' || 
+      const matchesSearch = searchTerm === '' ||
         prediction.home_team?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         prediction.away_team?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         prediction.league_name?.toLowerCase().includes(searchTerm.toLowerCase());
-      
       const matchesLeague = selectedLeague === 'all' || prediction.league_name === selectedLeague;
       const matchesCountry = selectedCountry === 'all' || prediction.country_name === selectedCountry;
-
       const matchesDate = selectedDates.size === 0 || (
         prediction.date_time
           ? selectedDates.has(new Date(prediction.date_time).toISOString().slice(0, 10))
           : false
       );
-      
       return matchesSearch && matchesLeague && matchesCountry && matchesDate;
     });
 
     if (sortField === null) {
-      // Default: high → mid → low liability, then confidence desc within each group
       filtered.sort((a, b) => {
         const liabilityDiff = liabilityOrder(b.liability_name) - liabilityOrder(a.liability_name);
         if (liabilityDiff !== 0) return liabilityDiff;
@@ -133,7 +122,6 @@ const PredictionsTable = () => {
     } else {
       filtered.sort((a, b) => {
         let aValue: any, bValue: any;
-        
         switch (sortField) {
           case 'date':
             aValue = new Date(a.date_time);
@@ -162,23 +150,16 @@ const PredictionsTable = () => {
           default:
             return 0;
         }
-
-        if (sortDirection === 'asc') {
-          return aValue > bValue ? 1 : -1;
-        } else {
-          return aValue < bValue ? 1 : -1;
-        }
+        return sortDirection === 'asc' ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
       });
     }
-
     return filtered;
   }, [predictions, searchTerm, selectedLeague, selectedCountry, selectedDates, sortField, sortDirection]);
 
   const totalPages = Math.ceil(filteredAndSortedPredictions.length / itemsPerPage);
   const paginatedResults = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredAndSortedPredictions.slice(startIndex, endIndex);
+    return filteredAndSortedPredictions.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredAndSortedPredictions, currentPage, itemsPerPage]);
 
   useEffect(() => {
@@ -198,42 +179,33 @@ const PredictionsTable = () => {
     const formatDateTimeCSV = (dt: string) => {
       const d = new Date(dt);
       const yyyy = d.getFullYear();
-      const mm   = String(d.getMonth() + 1).padStart(2, '0');
-      const dd   = String(d.getDate()).padStart(2, '0');
-      const hh   = String(d.getHours()).padStart(2, '0');
-      const min  = String(d.getMinutes()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const min = String(d.getMinutes()).padStart(2, '0');
       return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
     };
-
     const predictedVictor = (pred: Prediction) => {
-      if (pred.phg > pred.pag) return 'home';
-      if (pred.pag > pred.phg) return 'away';
-      return 'draw';
+      if (pred.phg > pred.pag) return t('home');
+      if (pred.pag > pred.phg) return t('away');
+      return t('draw');
     };
-
     const headers = [
-      'Country', 'League', 'Date Time',
-      'Home Team', 'Home Predicted Goals', 'Away Predicted Goals', 'Away Team',
-      'Predicted Victor', 'Probability', 'Liability',
+      t('colLeague'), t('colMatch'), t('colDateTime'),
+      'Home Predicted Goals', 'Away Predicted Goals',
+      'Predicted Victor', t('colConfidence'), t('colLiability'),
     ];
-
     const csvData = filteredAndSortedPredictions.map(pred => [
-      pred.country_name,
-      pred.league_name,
+      pred.country_name, pred.league_name,
       pred.date_time ? formatDateTimeCSV(pred.date_time) : '',
-      pred.home_team,
-      pred.phg,
-      pred.pag,
-      pred.away_team,
+      pred.home_team, pred.phg, pred.pag, pred.away_team,
       predictedVictor(pred),
       formatPercentage(pred.max_prob * 100),
       pred.liability_name,
     ]);
-
     const csv = [headers, ...csvData]
       .map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
       .join('\n');
-
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -242,6 +214,8 @@ const PredictionsTable = () => {
     a.click();
     window.URL.revokeObjectURL(url);
   };
+
+  const dateLocale = locale === 'es' ? 'es-ES' : 'en-GB';
 
   return (
     <div className="space-y-6">
@@ -252,9 +226,8 @@ const PredictionsTable = () => {
             <button
               onClick={() => setSortField(null)}
               className="px-3 py-2 border border-border rounded-lg bg-background text-foreground hover:bg-card transition-colors flex items-center gap-2 text-sm"
-              title="Reset to default sort (Liability & Confidence)"
             >
-              🔄 Reset Sort
+              {t('resetSort')}
             </button>
           )}
         </div>
@@ -263,14 +236,12 @@ const PredictionsTable = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search matches, teams, or leagues..."
+              placeholder={t('searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-2 pl-10 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-              🔍
-            </span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">🔍</span>
           </div>
         </div>
 
@@ -279,7 +250,7 @@ const PredictionsTable = () => {
           className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
         >
           <span>⬇️</span>
-          Export CSV
+          {t('exportCsv')}
         </button>
       </div>
 
@@ -289,7 +260,7 @@ const PredictionsTable = () => {
           onChange={(e) => setSelectedLeague(e.target.value)}
           className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         >
-          <option value="all">All Leagues</option>
+          <option value="all">{t('allLeagues')}</option>
           {leagues.map(league => (
             <option key={league} value={league}>{league}</option>
           ))}
@@ -300,14 +271,14 @@ const PredictionsTable = () => {
           onChange={(e) => setSelectedCountry(e.target.value)}
           className="px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         >
-          <option value="all">All Countries</option>
+          <option value="all">{t('allCountries')}</option>
           {countries.map(country => (
             <option key={country} value={country}>{country}</option>
           ))}
         </select>
 
         <div className="flex items-center gap-2">
-          <label className="text-sm text-muted-foreground">Show:</label>
+          <label className="text-sm text-muted-foreground">{t('show')}</label>
           <select
             value={itemsPerPage}
             onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
@@ -317,22 +288,22 @@ const PredictionsTable = () => {
             <option value={50}>50</option>
             <option value={100}>100</option>
           </select>
-          <span className="text-sm text-muted-foreground">per page</span>
+          <span className="text-sm text-muted-foreground">{t('perPage')}</span>
         </div>
 
         <div className="ml-auto flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-lg">
-          <span className="text-sm text-muted-foreground">Total:</span>
+          <span className="text-sm text-muted-foreground">{t('total')}</span>
           <span className="font-bold text-lg text-primary">{filteredAndSortedPredictions.length}</span>
-          <span className="text-sm text-muted-foreground">predictions</span>
+          <span className="text-sm text-muted-foreground">{t('predictions')}</span>
         </div>
       </div>
 
-      {/* Date chips — only shown when there is more than one unique date */}
+      {/* Date chips */}
       {availableDates.length > 1 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-muted-foreground">📅 Date:</span>
+          <span className="text-sm text-muted-foreground">{t('dateFilter')}</span>
           {availableDates.map(dateKey => {
-            const label = new Date(dateKey + 'T12:00:00').toLocaleDateString('en-GB', {
+            const label = new Date(dateKey + 'T12:00:00').toLocaleDateString(dateLocale, {
               weekday: 'short', month: 'short', day: 'numeric',
             });
             const active = selectedDates.has(dateKey);
@@ -355,7 +326,7 @@ const PredictionsTable = () => {
               onClick={() => setSelectedDates(new Set())}
               className="px-3 py-1 rounded-full text-sm border border-border bg-background text-muted-foreground hover:bg-card transition-colors"
             >
-              ✕ Clear
+              {t('clear')}
             </button>
           )}
         </div>
@@ -365,13 +336,13 @@ const PredictionsTable = () => {
         <div className="flex justify-center items-center py-12">
           <div className="text-center">
             <div className="text-4xl mb-2">⏳</div>
-            <p className="text-muted-foreground">Loading predictions...</p>
+            <p className="text-muted-foreground">{t('loading')}</p>
           </div>
         </div>
       ) : filteredAndSortedPredictions.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-4xl mb-2">🔍</div>
-          <p className="text-muted-foreground">No predictions found matching your filters.</p>
+          <p className="text-muted-foreground">{t('noResults')}</p>
         </div>
       ) : (
         <>
@@ -380,59 +351,41 @@ const PredictionsTable = () => {
               <thead>
                 <tr className="bg-card border-b border-border">
                   <th className="px-4 py-3 text-left">
-                    <button
-                      onClick={() => handleSort('league')}
-                      className="flex items-center gap-2 hover:text-primary transition-colors"
-                    >
-                      League
+                    <button onClick={() => handleSort('league')} className="flex items-center gap-2 hover:text-primary transition-colors">
+                      {t('colLeague')}
                       {sortField === 'league' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
                     </button>
                   </th>
                   <th className="px-4 py-3 text-left">
-                    <button
-                      onClick={() => handleSort('homeTeam')}
-                      className="flex items-center gap-2 hover:text-primary transition-colors"
-                    >
-                      Match
+                    <button onClick={() => handleSort('homeTeam')} className="flex items-center gap-2 hover:text-primary transition-colors">
+                      {t('colMatch')}
                       {sortField === 'homeTeam' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
                     </button>
                   </th>
                   <th className="px-4 py-3 text-left">
-                    <button
-                      onClick={() => handleSort('date')}
-                      className="flex items-center gap-2 hover:text-primary transition-colors"
-                    >
-                      Date & Time
+                    <button onClick={() => handleSort('date')} className="flex items-center gap-2 hover:text-primary transition-colors">
+                      {t('colDateTime')}
                       {sortField === 'date' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-center">Prediction</th>
-                  <th className="px-4 py-3 text-center">Actual</th>
+                  <th className="px-4 py-3 text-center">{t('colPrediction')}</th>
+                  <th className="px-4 py-3 text-center">{t('colActual')}</th>
                   <th className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => handleSort('confidence')}
-                      className="flex items-center gap-2 hover:text-primary transition-colors"
-                    >
-                      Confidence
+                    <button onClick={() => handleSort('confidence')} className="flex items-center gap-2 hover:text-primary transition-colors">
+                      {t('colConfidence')}
                       {sortField === 'confidence' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
                     </button>
                   </th>
                   <th className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => handleSort('liability')}
-                      className="flex items-center gap-2 hover:text-primary transition-colors"
-                    >
-                      Liability
+                    <button onClick={() => handleSort('liability')} className="flex items-center gap-2 hover:text-primary transition-colors">
+                      {t('colLiability')}
                       {sortField === 'liability' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-center">Avg Odds</th>
+                  <th className="px-4 py-3 text-center">{t('colAvgOdds')}</th>
                   <th className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => handleSort('status')}
-                      className="flex items-center gap-2 hover:text-primary transition-colors"
-                    >
-                      Status
+                    <button onClick={() => handleSort('status')} className="flex items-center gap-2 hover:text-primary transition-colors">
+                      {t('colStatus')}
                       {sortField === 'status' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
                     </button>
                   </th>
@@ -448,11 +401,7 @@ const PredictionsTable = () => {
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
                         {prediction.flag_url && (
-                          <img
-                            src={prediction.flag_url}
-                            alt={prediction.country_name}
-                            className="w-5 h-4 object-cover rounded"
-                          />
+                          <img src={prediction.flag_url} alt={prediction.country_name} className="w-5 h-4 object-cover rounded" />
                         )}
                         <div>
                           <div className="text-sm font-medium">{prediction.league_name}</div>
@@ -483,8 +432,8 @@ const PredictionsTable = () => {
                         {prediction.phg} - {prediction.pag}
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {prediction.phg > prediction.pag ? 'home' : 
-                         prediction.pag > prediction.phg ? 'away' : 'draw'}
+                        {prediction.phg > prediction.pag ? t('home') :
+                         prediction.pag > prediction.phg ? t('away') : t('draw')}
                       </div>
                     </td>
                     <td className="px-4 py-4 text-center">
@@ -494,13 +443,13 @@ const PredictionsTable = () => {
                             {prediction.goals_home} - {prediction.goals_away}
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            {prediction.bet_name || 
-                             (prediction.goals_home! > prediction.goals_away! ? 'home' : 
-                              prediction.goals_away! > prediction.goals_home! ? 'away' : 'draw')}
+                            {prediction.bet_name ||
+                             (prediction.goals_home! > prediction.goals_away! ? t('home') :
+                              prediction.goals_away! > prediction.goals_home! ? t('away') : t('draw'))}
                           </div>
                         </>
                       ) : (
-                        <div className="text-sm text-muted-foreground">Not played</div>
+                        <div className="text-sm text-muted-foreground">{t('notPlayed')}</div>
                       )}
                     </td>
                     <td className="px-4 py-4 text-center">
@@ -510,7 +459,7 @@ const PredictionsTable = () => {
                     </td>
                     <td className="px-4 py-4 text-center">
                       <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
-                        prediction.liability_name?.toLowerCase() === 'high' 
+                        prediction.liability_name?.toLowerCase() === 'high'
                           ? 'bg-green-500/10 text-green-500'
                           : prediction.liability_name?.toLowerCase() === 'mid' || prediction.liability_name?.toLowerCase() === 'medium'
                           ? 'bg-yellow-500/10 text-yellow-500'
@@ -534,16 +483,16 @@ const PredictionsTable = () => {
                       {prediction.has_actual_result ? (
                         prediction.is_correct_prediction ? (
                           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-green-500/10 text-green-500">
-                            ✅ Correct
+                            ✅ {t('correct')}
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-red-500/10 text-red-500">
-                            ❌ Wrong
+                            ❌ {t('wrong')}
                           </span>
                         )
                       ) : (
                         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-blue-500/10 text-blue-500">
-                          ⏳ Pending
+                          ⏳ {t('pending')}
                         </span>
                       )}
                     </td>
@@ -555,67 +504,50 @@ const PredictionsTable = () => {
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border">
             <div className="text-sm text-muted-foreground">
-              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredAndSortedPredictions.length)} of {filteredAndSortedPredictions.length} results
+              {t('showing', {
+                from: ((currentPage - 1) * itemsPerPage) + 1,
+                to: Math.min(currentPage * itemsPerPage, filteredAndSortedPredictions.length),
+                total: filteredAndSortedPredictions.length,
+              })}
             </div>
-            
+
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(1)}
-                disabled={currentPage === 1}
-                className="px-3 py-2 border border-border rounded-lg bg-background text-foreground hover:bg-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                First
+              <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1}
+                className="px-3 py-2 border border-border rounded-lg bg-background text-foreground hover:bg-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                {t('first')}
               </button>
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-2 border border-border rounded-lg bg-background text-foreground hover:bg-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                ← Previous
+              <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1}
+                className="px-3 py-2 border border-border rounded-lg bg-background text-foreground hover:bg-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                {t('previous')}
               </button>
-              
+
               <div className="flex items-center gap-2">
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
-                  
+                  let pageNum: number;
+                  if (totalPages <= 5) pageNum = i + 1;
+                  else if (currentPage <= 3) pageNum = i + 1;
+                  else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                  else pageNum = currentPage - 2 + i;
                   return (
-                    <button
-                      key={pageNum}
-                      onClick={() => setCurrentPage(pageNum)}
+                    <button key={pageNum} onClick={() => setCurrentPage(pageNum)}
                       className={`px-3 py-2 border rounded-lg transition-colors ${
                         currentPage === pageNum
                           ? 'bg-primary text-white border-primary'
                           : 'bg-background text-foreground border-border hover:bg-card'
-                      }`}
-                    >
+                      }`}>
                       {pageNum}
                     </button>
                   );
                 })}
               </div>
-              
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-2 border border-border rounded-lg bg-background text-foreground hover:bg-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next →
+
+              <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage === totalPages}
+                className="px-3 py-2 border border-border rounded-lg bg-background text-foreground hover:bg-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                {t('next')}
               </button>
-              <button
-                onClick={() => setCurrentPage(totalPages)}
-                disabled={currentPage === totalPages}
-                className="px-3 py-2 border border-border rounded-lg bg-background text-foreground hover:bg-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Last
+              <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}
+                className="px-3 py-2 border border-border rounded-lg bg-background text-foreground hover:bg-card transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                {t('last')}
               </button>
             </div>
           </div>

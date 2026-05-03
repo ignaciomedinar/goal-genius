@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// Icons replaced with emojis for compatibility
+import { useTranslations, useLocale } from 'next-intl';
 import { WeeklyAccuracy, Match } from '@/types';
 import { formatPercentage } from '@/lib/utils';
 
-// Mock data for previous week's top 10 matches
 const mockWeeklyAccuracy: WeeklyAccuracy = {
   week: 'Week of October 28 - November 3, 2024',
   accuracy: 87.5,
@@ -57,13 +56,14 @@ const mockWeeklyAccuracy: WeeklyAccuracy = {
       probability: 69.1,
       status: 'finished'
     },
-    // Add more matches...
   ]
 };
 
 const AccuracySection = () => {
   const [weeklyData, setWeeklyData] = useState<WeeklyAccuracy | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const t = useTranslations('accuracy');
+  const locale = useLocale();
 
   useEffect(() => {
     const fetchAccuracyData = async () => {
@@ -71,9 +71,8 @@ const AccuracySection = () => {
       try {
         const response = await fetch('/api/matches/previous-week');
         const result = await response.json();
-        
+
         if (result.success) {
-          // Convert database format to component format
           const matches: Match[] = result.data.map((match: any) => ({
             id: match.match_id || `${match.home_team}-${match.away_team}`,
             homeTeam: match.home_team,
@@ -96,8 +95,9 @@ const AccuracySection = () => {
           const top10Correct = top10.filter(m => m.is_correct_prediction).length;
           const accuracy = top10.length > 0 ? (top10Correct / top10.length) * 100 : 0;
 
+          const dateLocale = locale === 'es' ? 'es-ES' : 'en-US';
           const weeklyAccuracy: WeeklyAccuracy = {
-            week: `Week of ${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+            week: `${new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' })} - ${new Date().toLocaleDateString(dateLocale, { month: 'short', day: 'numeric', year: 'numeric' })}`,
             accuracy: Math.round(accuracy * 10) / 10,
             totalMatches: top10.length,
             correctPredictions: top10Correct,
@@ -106,13 +106,9 @@ const AccuracySection = () => {
 
           setWeeklyData(weeklyAccuracy);
         } else {
-          console.error('Failed to fetch accuracy data:', result.error);
-          // Fallback to mock data
           setWeeklyData(mockWeeklyAccuracy);
         }
       } catch (error) {
-        console.error('Error fetching accuracy data:', error);
-        // Fallback to mock data
         setWeeklyData(mockWeeklyAccuracy);
       } finally {
         setIsLoading(false);
@@ -120,7 +116,7 @@ const AccuracySection = () => {
     };
 
     fetchAccuracyData();
-  }, []);
+  }, [locale]);
 
   const checkPredictionAccuracy = (match: Match) => {
     return !!match.is_correct_prediction;
@@ -152,9 +148,6 @@ const AccuracySection = () => {
 
   if (!weeklyData) return null;
 
-  const correctMatches = weeklyData.topMatches.filter(checkPredictionAccuracy);
-  const incorrectMatches = weeklyData.topMatches.filter(match => !checkPredictionAccuracy(match));
-
   return (
     <section className="py-16 bg-muted/30">
       <div className="container mx-auto px-4">
@@ -162,13 +155,13 @@ const AccuracySection = () => {
           <div className="text-center mb-12">
             <div className="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full text-primary font-medium text-sm mb-4">
               <span className="mr-2">🏆</span>
-              Previous Week Performance
+              {t('badge')}
             </div>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Last Week's Accuracy Report
+              {t('title')}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              {weeklyData.week} - Our top 10 highest probability predictions and their outcomes
+              {weeklyData.week}
             </p>
           </div>
 
@@ -181,7 +174,7 @@ const AccuracySection = () => {
               <div className="text-3xl font-bold text-primary mb-2">
                 {formatPercentage(weeklyData.accuracy)}
               </div>
-              <div className="text-muted-foreground font-medium">Overall Accuracy</div>
+              <div className="text-muted-foreground font-medium">{t('overallAccuracy')}</div>
             </div>
 
             <div className="bg-card border border-border rounded-xl p-6 text-center">
@@ -191,7 +184,7 @@ const AccuracySection = () => {
               <div className="text-3xl font-bold text-win mb-2">
                 {weeklyData.correctPredictions}
               </div>
-              <div className="text-muted-foreground font-medium">Correct Predictions</div>
+              <div className="text-muted-foreground font-medium">{t('correctPredictions')}</div>
             </div>
 
             <div className="bg-card border border-border rounded-xl p-6 text-center">
@@ -201,7 +194,7 @@ const AccuracySection = () => {
               <div className="text-3xl font-bold text-loss mb-2">
                 {weeklyData.totalMatches - weeklyData.correctPredictions}
               </div>
-              <div className="text-muted-foreground font-medium">Missed Predictions</div>
+              <div className="text-muted-foreground font-medium">{t('missedPredictions')}</div>
             </div>
           </div>
 
@@ -209,19 +202,19 @@ const AccuracySection = () => {
           <div className="bg-card border border-border rounded-xl p-6">
             <h3 className="font-display text-xl font-semibold text-foreground mb-6 flex items-center">
               <span className="mr-2">📈</span>
-              Top 10 Predictions Breakdown
+              {t('breakdownTitle')}
             </h3>
-            
+
             <div className="space-y-4">
               {weeklyData.topMatches.slice(0, 10).map((match, index) => {
                 const isCorrect = checkPredictionAccuracy(match);
-                
+
                 return (
                   <div
                     key={match.id}
                     className={`flex items-center justify-between p-4 rounded-lg border-2 transition-colors ${
-                      isCorrect 
-                        ? 'border-win/20 bg-win/5' 
+                      isCorrect
+                        ? 'border-win/20 bg-win/5'
                         : 'border-loss/20 bg-loss/5'
                     }`}
                   >
@@ -236,17 +229,17 @@ const AccuracySection = () => {
                           {match.homeTeam} vs {match.awayTeam}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {match.league} • {formatPercentage(match.probability || 0)} confidence
+                          {match.league} • {formatPercentage(match.probability || 0)} {t('confidence')}
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="text-right">
                       <div className="font-semibold text-foreground mb-1">
                         {match.homeScore} - {match.awayScore}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        Predicted: {match.predictedHomeScore} - {match.predictedAwayScore}
+                        {t('predicted')} {match.predictedHomeScore} - {match.predictedAwayScore}
                       </div>
                     </div>
                   </div>

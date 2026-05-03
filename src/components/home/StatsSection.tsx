@@ -1,7 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { formatPercentage } from "@/lib/utils";
+
 interface LeagueStat {
   league_name: string;
   country_name: string;
@@ -12,9 +14,10 @@ interface LeagueStat {
   top10_matches: number;
   top10_correct_predictions: number;
 }
+
 const StatsSection = () => {
   const router = useRouter();
-  // Table: top 15 leagues with 10+ matches
+  const t = useTranslations('stats');
   const [leagueStats, setLeagueStats] = useState<LeagueStat[]>([]);
   const [kpiStats, setKpiStats] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,6 +46,7 @@ const StatsSection = () => {
   const top10Accuracy = kpiStats?.top10_accuracy ?? 0;
   const totalMatches = kpiStats?.total_matches ?? 0;
   const totalCorrect = kpiStats?.total_correct ?? 0;
+
   return (
     <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
@@ -50,44 +54,46 @@ const StatsSection = () => {
           <div className="text-center mb-12">
             <div className="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full text-primary font-medium text-sm mb-4">
               <span className="mr-2">📊</span>
-              Recent Performance
+              {t('badge')}
             </div>
             <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-              League-by-League Accuracy
+              {t('title')}
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Accuracy statistics from the last 30 days across leagues with 10+ matches, ranked by top-10 confidence performance.
+              {t('description')}
             </p>
           </div>
+
           {!isLoading && (
             <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-12">
               <div className="bg-card border border-border rounded-xl p-6 text-center">
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4"><span className="text-2xl">🎯</span></div>
                 <div className="text-2xl font-bold text-primary mb-2">{formatPercentage(overallAccuracy)}</div>
-                <div className="text-sm text-muted-foreground font-medium">Overall Accuracy</div>
+                <div className="text-sm text-muted-foreground font-medium">{t('overallAccuracy')}</div>
               </div>
               <div className="bg-card border border-border rounded-xl p-6 text-center">
                 <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center mx-auto mb-4"><span className="text-2xl">🏆</span></div>
                 <div className="text-2xl font-bold text-green-500 mb-2">{formatPercentage(top10Accuracy)}</div>
-                <div className="text-sm text-muted-foreground font-medium">Top 10 Accuracy</div>
+                <div className="text-sm text-muted-foreground font-medium">{t('top10Accuracy')}</div>
               </div>
               <div className="bg-card border border-border rounded-xl p-6 text-center">
                 <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center mx-auto mb-4"><span className="text-2xl">📅</span></div>
                 <div className="text-2xl font-bold text-foreground mb-2">{totalMatches.toLocaleString()}</div>
-                <div className="text-sm text-muted-foreground font-medium">Total Matches</div>
+                <div className="text-sm text-muted-foreground font-medium">{t('totalMatches')}</div>
               </div>
               <div className="bg-card border border-border rounded-xl p-6 text-center">
                 <div className="w-12 h-12 bg-green-500/10 rounded-lg flex items-center justify-center mx-auto mb-4"><span className="text-2xl">✅</span></div>
                 <div className="text-2xl font-bold text-green-500 mb-2">{totalCorrect.toLocaleString()}</div>
-                <div className="text-sm text-muted-foreground font-medium">Correct Predictions</div>
+                <div className="text-sm text-muted-foreground font-medium">{t('correctPredictions')}</div>
               </div>
               <div className="bg-card border border-border rounded-xl p-6 text-center">
                 <div className="w-12 h-12 bg-orange-500/10 rounded-lg flex items-center justify-center mx-auto mb-4"><span className="text-2xl">🌍</span></div>
                 <div className="text-2xl font-bold text-orange-500 mb-2">{kpiStats?.total_leagues ?? leagueStats.length}</div>
-                <div className="text-sm text-muted-foreground font-medium">Leagues Covered</div>
+                <div className="text-sm text-muted-foreground font-medium">{t('leaguesCovered')}</div>
               </div>
             </div>
           )}
+
           {isLoading ? (
             <div className="bg-card border border-border rounded-xl p-6">
               <div className="space-y-4">
@@ -101,7 +107,7 @@ const StatsSection = () => {
               </div>
             </div>
           ) : leagueStats.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">No recent data available.</div>
+            <div className="text-center py-12 text-muted-foreground">{t('noData')}</div>
           ) : (
             <div className="bg-card border border-border rounded-xl overflow-hidden">
               <div className="overflow-x-auto">
@@ -109,12 +115,12 @@ const StatsSection = () => {
                   <thead className="bg-muted/50">
                     <tr>
                       <th className="text-left p-4 font-semibold text-foreground">#</th>
-                      <th className="text-left p-4 font-semibold text-foreground">League</th>
-                      <th className="text-left p-4 font-semibold text-foreground">Country</th>
-                      <th className="text-center p-4 font-semibold text-foreground">Overall</th>
-                      <th className="text-center p-4 font-semibold text-foreground">Top 10 ▼</th>
-                      <th className="text-center p-4 font-semibold text-foreground">Matches</th>
-                      <th className="text-center p-4 font-semibold text-foreground">Correct</th>
+                      <th className="text-left p-4 font-semibold text-foreground">{t('tableHeaders.league')}</th>
+                      <th className="text-left p-4 font-semibold text-foreground">{t('tableHeaders.country')}</th>
+                      <th className="text-center p-4 font-semibold text-foreground">{t('tableHeaders.overall')}</th>
+                      <th className="text-center p-4 font-semibold text-foreground">{t('tableHeaders.top10')}</th>
+                      <th className="text-center p-4 font-semibold text-foreground">{t('tableHeaders.matches')}</th>
+                      <th className="text-center p-4 font-semibold text-foreground">{t('tableHeaders.correct')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -147,4 +153,5 @@ const StatsSection = () => {
     </section>
   );
 };
+
 export default StatsSection;

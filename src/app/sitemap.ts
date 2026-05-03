@@ -1,59 +1,25 @@
 import { MetadataRoute } from "next";
 import { query } from "@/lib/db";
 
+const pages = [
+  { path: "",        changeFrequency: "daily"   as const, priority: 1.0 },
+  { path: "/predictions", changeFrequency: "daily"   as const, priority: 0.9 },
+  { path: "/results",     changeFrequency: "daily"   as const, priority: 0.9 },
+  { path: "/accuracy",    changeFrequency: "weekly"  as const, priority: 0.8 },
+  { path: "/how-it-works",changeFrequency: "monthly" as const, priority: 0.6 },
+  { path: "/about",       changeFrequency: "monthly" as const, priority: 0.5 },
+  { path: "/privacy",     changeFrequency: "yearly"  as const, priority: 0.3 },
+  { path: "/terms",       changeFrequency: "yearly"  as const, priority: 0.3 },
+];
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://www.goal-genius.net";
+  const now = new Date();
 
-  const staticRoutes: MetadataRoute.Sitemap = [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/predictions`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/results`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/accuracy`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/how-it-works`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
-    {
-      url: `${baseUrl}/about`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: new Date(),
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-  ];
+  const staticRoutes: MetadataRoute.Sitemap = pages.flatMap(({ path, changeFrequency, priority }) => [
+    { url: `${baseUrl}${path}`,       lastModified: now, changeFrequency, priority },
+    { url: `${baseUrl}/es${path}`,    lastModified: now, changeFrequency, priority: priority * 0.95 },
+  ]);
 
   let matchRoutes: MetadataRoute.Sitemap = [];
   try {
@@ -64,12 +30,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
        ORDER BY date_time DESC
        LIMIT 1000`
     );
-    matchRoutes = result.rows.map((row) => ({
-      url: `${baseUrl}/match/${row.match_id}`,
-      lastModified: new Date(row.date_time),
-      changeFrequency: "weekly" as const,
-      priority: 0.7,
-    }));
+    matchRoutes = result.rows.flatMap((row) => [
+      {
+        url: `${baseUrl}/match/${row.match_id}`,
+        lastModified: new Date(row.date_time),
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      },
+      {
+        url: `${baseUrl}/es/match/${row.match_id}`,
+        lastModified: new Date(row.date_time),
+        changeFrequency: "weekly" as const,
+        priority: 0.65,
+      },
+    ]);
   } catch {
     // DB unavailable at build time — skip match routes
   }

@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-// Icons replaced with emojis for compatibility
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 import { Match } from '@/types';
 import { formatDate, formatTime, formatPercentage } from '@/lib/utils';
 
-// Mock data - replace with actual API calls
 const mockMatches: Match[] = [
   {
     id: '1',
@@ -78,6 +77,7 @@ const mockMatches: Match[] = [
 const TopMatchesSection = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const t = useTranslations('topMatches');
 
   useEffect(() => {
     const fetchMatches = async () => {
@@ -85,9 +85,8 @@ const TopMatchesSection = () => {
       try {
         const response = await fetch('/api/matches/top?limit=6');
         const result = await response.json();
-        
+
         if (result.success) {
-          // Convert database format to component format
           const formattedMatches: Match[] = result.data.map((match: any) => ({
             id: match.match_id || `${match.home_team}-${match.away_team}`,
             homeTeam: match.home_team,
@@ -111,13 +110,9 @@ const TopMatchesSection = () => {
           }));
           setMatches(formattedMatches);
         } else {
-          console.error('Failed to fetch matches:', result.error);
-          // Fallback to mock data
           setMatches(mockMatches);
         }
       } catch (error) {
-        console.error('Error fetching matches:', error);
-        // Fallback to mock data
         setMatches(mockMatches);
       } finally {
         setIsLoading(false);
@@ -128,9 +123,9 @@ const TopMatchesSection = () => {
   }, []);
 
   const getPredictionResult = (homeScore: number, awayScore: number) => {
-    if (homeScore > awayScore) return { result: 'Home Win', color: 'text-win' };
-    if (awayScore > homeScore) return { result: 'Away Win', color: 'text-win' };
-    return { result: 'Draw', color: 'text-draw' };
+    if (homeScore > awayScore) return { result: t('homeWin'), color: 'text-win' };
+    if (awayScore > homeScore) return { result: t('awayWin'), color: 'text-win' };
+    return { result: t('draw'), color: 'text-draw' };
   };
 
   return (
@@ -139,14 +134,13 @@ const TopMatchesSection = () => {
         <div className="text-center mb-12">
           <div className="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full text-primary font-medium text-sm mb-4">
             <span className="mr-2">📈</span>
-            This Week's Highlights
+            {t('badge')}
           </div>
           <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Top 6 Matches This Week
+            {t('title')}
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Our highest confidence predictions for the most anticipated matches this week. 
-            These selections are based on advanced statistical analysis and team performance metrics.
+            {t('description')}
           </p>
         </div>
 
@@ -169,10 +163,10 @@ const TopMatchesSection = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
             {matches.map((match, index) => {
               const prediction = getPredictionResult(
-                match.predictedHomeScore || 0, 
+                match.predictedHomeScore || 0,
                 match.predictedAwayScore || 0
               );
-              
+
               return (
                 <Link
                   key={match.id}
@@ -194,7 +188,7 @@ const TopMatchesSection = () => {
                         {match.homeTeam}
                       </div>
                     </div>
-                    
+
                     <div className="mx-6 text-center">
                       <div className="text-2xl font-bold text-foreground mb-1">
                         {match.predictedHomeScore} - {match.predictedAwayScore}
@@ -222,9 +216,9 @@ const TopMatchesSection = () => {
                         {formatTime(match.matchDate + 'T' + match.matchTime)}
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Confidence:</span>
+                      <span className="text-sm text-muted-foreground">{t('confidence')}</span>
                       <span className="text-sm font-semibold text-primary">
                         {formatPercentage(match.probability || 0)}
                       </span>
@@ -232,7 +226,7 @@ const TopMatchesSection = () => {
                   </div>
 
                   <div className="mt-4 flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="text-sm text-muted-foreground">View Details</span>
+                    <span className="text-sm text-muted-foreground">{t('viewDetails')}</span>
                     <span className="text-muted-foreground">↗</span>
                   </div>
                 </Link>
@@ -246,7 +240,7 @@ const TopMatchesSection = () => {
             href="/predictions"
             className="inline-flex items-center px-6 py-3 bg-secondary text-secondary-foreground font-medium rounded-lg hover:bg-secondary/80 transition-colors"
           >
-            View All Predictions
+            {t('viewAll')}
             <span className="ml-2">↗</span>
           </Link>
         </div>

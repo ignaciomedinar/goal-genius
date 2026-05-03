@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
-export const metadata: Metadata = {
-  title: 'Terms of Service — Goal Genius',
-  description:
-    'Read the Goal Genius Terms of Service before using our football predictions platform.',
-};
+const baseUrl = 'https://www.goal-genius.net';
 
 const sections = [
   {
@@ -121,48 +118,61 @@ Website: www.goal-genius.net`,
   },
 ];
 
-export default function TermsPage() {
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations('terms');
+  const isEs = locale === 'es';
+  const canonical = isEs ? `${baseUrl}/es/terms` : `${baseUrl}/terms`;
+
+  return {
+    title: t('title') + ' — Goal Genius',
+    description: 'Read the Goal Genius Terms of Service before using our football predictions platform.',
+    alternates: {
+      canonical,
+      languages: {
+        en: `${baseUrl}/terms`,
+        es: `${baseUrl}/es/terms`,
+        'x-default': `${baseUrl}/terms`,
+      },
+    },
+  };
+}
+
+export default async function TermsPage() {
+  const t = await getTranslations('terms');
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/5 py-16 border-b border-border">
         <div className="container mx-auto px-4 text-center">
           <div className="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full text-primary font-medium text-sm mb-6">
             <span className="mr-2">📋</span>
-            Legal
+            {t('badge')}
           </div>
-          <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Terms of Service
-          </h1>
-          <p className="text-muted-foreground text-sm">Last updated: April 2026</p>
+          <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-4">{t('title')}</h1>
+          <p className="text-muted-foreground text-sm">{t('lastUpdated')}</p>
         </div>
       </section>
 
-      {/* Responsible gambling banner */}
       <div className="bg-amber-500/10 border-b border-amber-500/30">
         <div className="container mx-auto px-4 py-4 text-center">
           <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
-            ⚠️ Predictions are for entertainment purposes only. Please gamble responsibly.{' '}
-            <a
-              href="https://www.begambleaware.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:no-underline"
-            >
+            ⚠️ {t('gamblingWarning')}{' '}
+            <a href="https://www.begambleaware.org" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">
               BeGambleAware.org
             </a>
           </p>
         </div>
       </div>
 
-      {/* Content */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
-            {/* TOC */}
             <div className="bg-muted/30 border border-border rounded-xl p-6 mb-12">
               <h2 className="font-display font-semibold text-foreground mb-4 text-sm uppercase tracking-wide">
-                Table of Contents
+                {t('tableOfContents')}
               </h2>
               <ol className="space-y-2">
                 {sections.map((section) => (
@@ -183,7 +193,6 @@ export default function TermsPage() {
               </ol>
             </div>
 
-            {/* Sections */}
             <div className="space-y-12">
               {sections.map((section) => (
                 <div key={section.id} id={section.id} className="scroll-mt-24">
@@ -199,17 +208,11 @@ export default function TermsPage() {
                   {section.highlight && (
                     <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-4">
                       <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold uppercase tracking-wide">
-                        ⚠️ Important — Please Read
+                        {t('importantWarning')}
                       </p>
                     </div>
                   )}
-                  <div
-                    className={`leading-relaxed text-sm whitespace-pre-line ${
-                      section.highlight
-                        ? 'text-muted-foreground'
-                        : 'text-muted-foreground'
-                    }`}
-                  >
+                  <div className="text-muted-foreground leading-relaxed text-sm whitespace-pre-line">
                     {section.content.split('\n').map((line, i) => {
                       const boldFormatted = line.replace(
                         /\*\*(.*?)\*\*/g,

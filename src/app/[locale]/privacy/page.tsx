@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy — Goal Genius',
-  description: 'Read the Goal Genius Privacy Policy to understand how we collect, use, and protect your information.',
-};
+const baseUrl = 'https://www.goal-genius.net';
 
 const sections = [
   {
@@ -96,39 +94,55 @@ Website: www.goal-genius.net`,
   },
 ];
 
-export default function PrivacyPage() {
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations('privacy');
+  const isEs = locale === 'es';
+  const canonical = isEs ? `${baseUrl}/es/privacy` : `${baseUrl}/privacy`;
+
+  return {
+    title: t('title') + ' — Goal Genius',
+    description: 'Read the Goal Genius Privacy Policy to understand how we collect, use, and protect your information.',
+    alternates: {
+      canonical,
+      languages: {
+        en: `${baseUrl}/privacy`,
+        es: `${baseUrl}/es/privacy`,
+        'x-default': `${baseUrl}/privacy`,
+      },
+    },
+  };
+}
+
+export default async function PrivacyPage() {
+  const t = await getTranslations('privacy');
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <section className="bg-gradient-to-br from-primary/10 via-background to-secondary/5 py-16 border-b border-border">
         <div className="container mx-auto px-4 text-center">
           <div className="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full text-primary font-medium text-sm mb-6">
             <span className="mr-2">🔒</span>
-            Legal
+            {t('badge')}
           </div>
-          <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-4">
-            Privacy Policy
-          </h1>
-          <p className="text-muted-foreground text-sm">Last updated: April 2026</p>
+          <h1 className="font-display text-4xl md:text-5xl font-bold text-foreground mb-4">{t('title')}</h1>
+          <p className="text-muted-foreground text-sm">{t('lastUpdated')}</p>
         </div>
       </section>
 
-      {/* Content */}
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto">
-            {/* TOC */}
             <div className="bg-muted/30 border border-border rounded-xl p-6 mb-12">
               <h2 className="font-display font-semibold text-foreground mb-4 text-sm uppercase tracking-wide">
-                Table of Contents
+                {t('tableOfContents')}
               </h2>
               <ol className="space-y-2">
                 {sections.map((section) => (
                   <li key={section.id}>
-                    <a
-                      href={`#${section.id}`}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                    >
+                    <a href={`#${section.id}`} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                       {section.title}
                     </a>
                   </li>
@@ -136,7 +150,6 @@ export default function PrivacyPage() {
               </ol>
             </div>
 
-            {/* Sections */}
             <div className="space-y-12">
               {sections.map((section) => (
                 <div key={section.id} id={section.id} className="scroll-mt-24">

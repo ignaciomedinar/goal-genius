@@ -1,6 +1,8 @@
-import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 
-const Footer = () => {
+const Footer = async () => {
+  const t = await getTranslations('footer');
   const currentYear = new Date().getFullYear();
 
   return (
@@ -16,31 +18,30 @@ const Footer = () => {
               <h3 className="font-display font-bold text-lg">Goal Genius</h3>
             </div>
             <p className="text-muted-foreground mb-4 max-w-md">
-              Advanced football match predictions powered by AI analysis. Get accurate predictions, 
-              detailed statistics, and comprehensive insights for all major tournaments.
+              {t('description')}
             </p>
             <p className="text-sm text-muted-foreground">
-              © {currentYear} Goal Genius. All rights reserved.
+              © {currentYear} Goal Genius. {t('allRightsReserved')}
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-semibold mb-4">Quick Links</h4>
+            <h4 className="font-semibold mb-4">{t('quickLinks')}</h4>
             <ul className="space-y-2">
               <li>
                 <Link href="/" className="text-muted-foreground hover:text-primary transition-colors">
-                  Home
+                  {t('home')}
                 </Link>
               </li>
               <li>
                 <Link href="/predictions" className="text-muted-foreground hover:text-primary transition-colors">
-                  Predictions
+                  {t('predictions')}
                 </Link>
               </li>
               <li>
                 <Link href="/results" className="text-muted-foreground hover:text-primary transition-colors">
-                  Results
+                  {t('results')}
                 </Link>
               </li>
             </ul>
@@ -48,21 +49,21 @@ const Footer = () => {
 
           {/* Information */}
           <div>
-            <h4 className="font-semibold mb-4">Information</h4>
+            <h4 className="font-semibold mb-4">{t('information')}</h4>
             <ul className="space-y-2">
               <li>
                 <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
-                  About Us
+                  {t('aboutUs')}
                 </Link>
               </li>
               <li>
                 <Link href="/how-it-works" className="text-muted-foreground hover:text-primary transition-colors">
-                  How It Works
+                  {t('howItWorks')}
                 </Link>
               </li>
               <li>
                 <Link href="/accuracy" className="text-muted-foreground hover:text-primary transition-colors">
-                  Our Accuracy
+                  {t('ourAccuracy')}
                 </Link>
               </li>
             </ul>
@@ -72,15 +73,14 @@ const Footer = () => {
         <div className="border-t border-border mt-8 pt-6">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-sm text-muted-foreground">
-              Football predictions and analysis for entertainment purposes only. 
-              Please gamble responsibly.
+              {t('disclaimer')}
             </p>
             <div className="flex space-x-4">
               <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Privacy Policy
+                {t('privacyPolicy')}
               </Link>
               <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                Terms of Service
+                {t('termsOfService')}
               </Link>
             </div>
           </div>

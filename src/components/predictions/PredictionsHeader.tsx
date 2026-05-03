@@ -1,19 +1,20 @@
-// Icons replaced with emojis for compatibility
+import { getTranslations } from 'next-intl/server';
 
-const PredictionsHeader = () => {
+const PredictionsHeader = async () => {
+  const t = await getTranslations('predictionsHeader');
+
   return (
     <div className="mb-8">
       <div className="text-center mb-8">
         <div className="inline-flex items-center px-4 py-2 bg-primary/10 rounded-full text-primary font-medium text-sm mb-4">
           <span className="mr-2">📅</span>
-          Current Week Predictions
+          {t('badge')}
         </div>
         <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
-          Football Match Predictions
+          {t('title')}
         </h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Browse this week's football match predictions with advanced filtering options. 
-          Export data, view detailed analysis, and access comprehensive match insights.
+          {t('description')}
         </p>
       </div>
 
@@ -21,16 +22,16 @@ const PredictionsHeader = () => {
         <div className="flex flex-col sm:flex-row gap-4 flex-1">
           <div className="flex items-center text-sm text-muted-foreground">
             <span className="mr-2">🔍</span>
-            Filter by league, date, or probability
+            {t('filterHint')}
           </div>
           <div className="flex items-center text-sm text-muted-foreground">
             <span className="mr-2">⬇️</span>
-            Export predictions to CSV
+            {t('exportHint')}
           </div>
         </div>
-        
+
         <div className="text-sm text-muted-foreground">
-          Click any match for detailed analysis
+          {t('clickHint')}
         </div>
       </div>
     </div>
