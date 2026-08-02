@@ -13,6 +13,7 @@
     "aboutUs": "About Us",
     "howItWorks": "How It Works",
     "ourAccuracy": "Our Accuracy",
+    "contactUs": "Contact Us",
     "disclaimer": "Football predictions and analysis for entertainment purposes only. Please gamble responsibly.",
     "home": "Home",
     "predictions": "Predictions",
@@ -247,6 +248,19 @@
     "ctaDescription": "Browse our current match predictions and check how our model has performed in recent weeks.",
     "ctaPredictions": "View Predictions",
     "ctaAccuracy": "Our Accuracy Record"
+  },
+  "contact": {
+    "badge": "Get in Touch",
+    "title": "Contact",
+    "titleHighlight": "Goal Genius",
+    "description": "Questions, feedback, or a correction to report? We'd like to hear from you.",
+    "emailLabel": "Email us at",
+    "responseNote": "We aim to respond within a few business days.",
+    "topicsTitle": "What can we help with?",
+    "topic1": "General questions about predictions or how the model works",
+    "topic2": "Reporting an error in match data or results",
+    "topic3": "Privacy or data requests",
+    "topic4": "Partnerships and other enquiries"
   },
   "howItWorks": {
     "badge": "How It Works",

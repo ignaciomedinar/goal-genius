@@ -109,6 +109,12 @@ export default async function LocaleLayout({ children, params }: Props) {
             }),
           }}
         />
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7649332633911489"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <Script src="https://www.googletagmanager.com/gtag/js?id=G-WRCQ41KVM8" strategy="afterInteractive" />
         <Script id="google-analytics" strategy="afterInteractive">
           {`

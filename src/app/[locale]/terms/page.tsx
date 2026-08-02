@@ -114,6 +114,7 @@ Our total liability to you for any claim arising under these Terms shall not exc
     content: `If you have any questions about these Terms, please contact us at:
 
 **Goal Genius**
+Email: ignaciomedinar@gmail.com
 Website: www.goal-genius.net`,
   },
 ];

@@ -90,6 +90,7 @@ Since we collect minimal data and require no registration, most of these rights 
     content: `If you have any questions about this Privacy Policy, please contact us at:
 
 **Goal Genius**
+Email: ignaciomedinar@gmail.com
 Website: www.goal-genius.net`,
   },
 ];

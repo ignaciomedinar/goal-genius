@@ -13,6 +13,7 @@
     "aboutUs": "Sobre Nosotros",
     "howItWorks": "Cómo Funciona",
     "ourAccuracy": "Nuestra Precisión",
+    "contactUs": "Contacto",
     "disclaimer": "Predicciones y análisis de fútbol solo para entretenimiento. Por favor apuesta responsablemente.",
     "home": "Inicio",
     "predictions": "Predicciones",
@@ -247,6 +248,19 @@
     "ctaDescription": "Explora nuestras predicciones de partidos actuales y comprueba cómo ha funcionado nuestro modelo en las últimas semanas.",
     "ctaPredictions": "Ver Predicciones",
     "ctaAccuracy": "Nuestro Historial de Precisión"
+  },
+  "contact": {
+    "badge": "Contacta con Nosotros",
+    "title": "Contacta con",
+    "titleHighlight": "Goal Genius",
+    "description": "¿Preguntas, comentarios o quieres reportar un error? Nos encantaría saber de ti.",
+    "emailLabel": "Escríbenos a",
+    "responseNote": "Intentamos responder en un plazo de pocos días hábiles.",
+    "topicsTitle": "¿En qué podemos ayudarte?",
+    "topic1": "Preguntas generales sobre las predicciones o cómo funciona el modelo",
+    "topic2": "Reportar un error en los datos de partidos o resultados",
+    "topic3": "Solicitudes de privacidad o de datos",
+    "topic4": "Colaboraciones y otras consultas"
   },
   "howItWorks": {
     "badge": "Cómo Funciona",

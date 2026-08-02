@@ -66,6 +66,11 @@ const Footer = async () => {
                   {t('ourAccuracy')}
                 </Link>
               </li>
+              <li>
+                <Link href="/contact" className="text-muted-foreground hover:text-primary transition-colors">
+                  {t('contactUs')}
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
