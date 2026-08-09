@@ -5,16 +5,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatDate(date: string | Date) {
-  return new Intl.DateTimeFormat('en-US', {
+// No `timeZone` is passed to Intl.DateTimeFormat here on purpose: the API
+// now sends a real UTC instant (see src/lib/database.ts, `date_time AT TIME
+// ZONE 'Europe/Madrid'`), and omitting `timeZone` makes the browser render
+// it in the visitor's own local timezone automatically -- no per-country
+// logic needed. Forcing a timeZone here would undo that.
+export function formatDate(date: string | Date, locale: string = 'en-US') {
+  return new Intl.DateTimeFormat(locale, {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
   }).format(new Date(date))
 }
 
-export function formatTime(date: string | Date) {
-  return new Intl.DateTimeFormat('en-US', {
+export function formatTime(date: string | Date, locale: string = 'en-US') {
+  return new Intl.DateTimeFormat(locale, {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(date))

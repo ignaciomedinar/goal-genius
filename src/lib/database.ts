@@ -32,7 +32,7 @@ export async function getCurrentWeekPredictions(): Promise<MatchWithAccuracy[]> 
         dc.country_name,
         dc.flag_url,
         dl.league_name,
-        fmp.date_time,
+        fmp.date_time AT TIME ZONE 'Europe/Madrid' AS date_time,
         dth.team_name as home_team,
         fmp.phg,
         fmp.pag,
@@ -45,7 +45,7 @@ export async function getCurrentWeekPredictions(): Promise<MatchWithAccuracy[]> 
         odds_agg.avg_home_odds,
         odds_agg.avg_draw_odds,
         odds_agg.avg_away_odds
-      FROM marts.fact_match_predictions fmp 
+      FROM marts.fact_match_predictions fmp
       LEFT JOIN marts.dim_leagues dl ON fmp.league_id = dl.league_id 
       LEFT JOIN marts.dim_countries dc ON dl.country_id = dc.country_id 
       LEFT JOIN marts.dim_teams dth ON fmp.home_team_id = dth.team_id AND fmp.league_id = dth.league_id
@@ -61,7 +61,7 @@ export async function getCurrentWeekPredictions(): Promise<MatchWithAccuracy[]> 
         FROM marts.fact_bookmakers_odds
         GROUP BY match_id
       ) odds_agg ON fmp.match_id = odds_agg.match_id
-      WHERE fmp.date_time::date BETWEEN date_trunc('week', now())::date AND (date_trunc('week', now()) + '6 days'::interval)::date
+      WHERE fmp.date_time::date BETWEEN date_trunc('week', now() AT TIME ZONE 'Europe/Madrid')::date AND (date_trunc('week', now() AT TIME ZONE 'Europe/Madrid') + '6 days'::interval)::date
       ORDER BY fmp.liability_id DESC, fmp.max_prob DESC;
     `;
 
@@ -116,7 +116,7 @@ export async function getResultsByWeek(weeksAgo: number = 1): Promise<MatchWithA
         dc.country_name,
         dc.flag_url,
         dl.league_name,
-        fmr.date_time,
+        fmr.date_time AT TIME ZONE 'Europe/Madrid' AS date_time,
         dth.team_name as home_team,
         fmr.goals_home,
         fmr.goals_away,
@@ -126,18 +126,18 @@ export async function getResultsByWeek(weeksAgo: number = 1): Promise<MatchWithA
         db.bet_name as actual_result,
         fmr.prediction_is_correct,
         fmr.max_prob,
-        dtl.liability_name 
-      FROM marts.fact_match_results fmr 
+        dtl.liability_name
+      FROM marts.fact_match_results fmr
       LEFT JOIN marts.dim_leagues dl ON fmr.league_id = dl.league_id 
       LEFT JOIN marts.dim_countries dc ON dl.country_id = dc.country_id 
       LEFT JOIN marts.dim_teams dth ON fmr.home_team_id = dth.team_id AND fmr.league_id = dth.league_id
       LEFT JOIN marts.dim_teams dta ON fmr.away_team_id = dta.team_id AND fmr.league_id = dta.league_id 
       LEFT JOIN marts.dim_bet db ON db.bet_id = fmr.actual_result_id
       LEFT JOIN marts.dim_team_liability dtl ON dtl.liability_id = fmr.liability_id
-      WHERE fmr.date_time::date BETWEEN 
-        (date_trunc('week', now()) - ($1 + 6)::text::interval)::date 
-        AND (date_trunc('week', now()) - $1::text::interval)::date
-        AND fmr.prediction_is_correct IS NOT NULL 
+      WHERE fmr.date_time::date BETWEEN
+        (date_trunc('week', now() AT TIME ZONE 'Europe/Madrid') - ($1 + 6)::text::interval)::date
+        AND (date_trunc('week', now() AT TIME ZONE 'Europe/Madrid') - $1::text::interval)::date
+        AND fmr.prediction_is_correct IS NOT NULL
       ORDER BY fmr.liability_id DESC, fmr.max_prob DESC;
     `;
 
@@ -185,16 +185,16 @@ export async function getPreviousWeekMatches(): Promise<MatchWithAccuracy[]> {
         fmr.phg as prediction_goals_home,
         fmr.pag as prediction_goals_away,
         fmr.max_prob,
-        fmr.date_time,
+        fmr.date_time AT TIME ZONE 'Europe/Madrid' AS date_time,
         db.bet_name,
         fmr.prediction_is_correct
-      FROM marts.fact_match_results fmr 
+      FROM marts.fact_match_results fmr
       LEFT JOIN marts.dim_leagues dl ON fmr.league_id = dl.league_id 
       LEFT JOIN marts.dim_countries dc ON dl.country_id = dc.country_id 
       LEFT JOIN marts.dim_teams dth ON fmr.home_team_id = dth.team_id AND fmr.league_id = dth.league_id
       LEFT JOIN marts.dim_teams dta ON fmr.away_team_id = dta.team_id AND fmr.league_id = dta.league_id 
       LEFT JOIN marts.dim_bet db ON db.bet_id = fmr.actual_result_id
-      WHERE fmr.date_time::date BETWEEN (date_trunc('week', now()) - '7 days'::interval)::date AND (date_trunc('week', now()) - '1 days'::interval)::date
+      WHERE fmr.date_time::date BETWEEN (date_trunc('week', now() AT TIME ZONE 'Europe/Madrid') - '7 days'::interval)::date AND (date_trunc('week', now() AT TIME ZONE 'Europe/Madrid') - '1 days'::interval)::date
         AND fmr.prediction_is_correct IS NOT NULL
       ORDER BY fmr.liability_id DESC, fmr.max_prob DESC;
     `;
@@ -306,17 +306,17 @@ export async function getMatchResults(weekOffset: number = 7): Promise<MatchResu
         fmr.prediction_is_correct,
         fmr.max_prob,
         dtl.liability_name,
-        fmr.date_time
-      FROM marts.fact_match_results fmr 
+        fmr.date_time AT TIME ZONE 'Europe/Madrid' AS date_time
+      FROM marts.fact_match_results fmr
       LEFT JOIN marts.dim_leagues dl ON fmr.league_id = dl.league_id 
       LEFT JOIN marts.dim_countries dc ON dl.country_id = dc.country_id 
       LEFT JOIN marts.dim_teams dth ON fmr.home_team_id = dth.team_id AND fmr.league_id = dth.league_id
       LEFT JOIN marts.dim_teams dta ON fmr.away_team_id = dta.team_id AND fmr.league_id = dta.league_id 
       LEFT JOIN marts.dim_bet db ON db.bet_id = fmr.actual_result_id
       LEFT JOIN marts.dim_team_liability dtl ON dtl.liability_id = fmr.liability_id
-      WHERE fmr.date_time::date BETWEEN (date_trunc('week', now()) - make_interval(days => $1))::date 
-        AND (date_trunc('week', now()) - make_interval(days => 1) - make_interval(days => $1 - 7))::date
-        AND fmr.prediction_is_correct IS NOT NULL 
+      WHERE fmr.date_time::date BETWEEN (date_trunc('week', now() AT TIME ZONE 'Europe/Madrid') - make_interval(days => $1))::date
+        AND (date_trunc('week', now() AT TIME ZONE 'Europe/Madrid') - make_interval(days => 1) - make_interval(days => $1 - 7))::date
+        AND fmr.prediction_is_correct IS NOT NULL
       ORDER BY fmr.liability_id DESC, fmr.max_prob DESC;
     `;
 
@@ -377,7 +377,7 @@ export async function getMatchDetails(matchId: string): Promise<MatchDetails | n
         fmp.home_team_id,
         fmp.away_team_id,
         fmp.league_id,
-        fmp.date_time,
+        fmp.date_time AT TIME ZONE 'Europe/Madrid' AS date_time,
         fmp.phg,
         fmp.pag,
         fmr.goals_home,
@@ -452,21 +452,21 @@ export async function getTeamLastGames(teamId: number, leagueId: number, limit: 
           fmr.match_id,
           dl.league_name,
           dc.country_name,
-          fmr.date_time,
+          fmr.date_time AT TIME ZONE 'Europe/Madrid' AS date_time,
           dth.team_name as home_team,
           dta.team_name as away_team,
           fmr.goals_home,
           fmr.goals_away,
           fmr.prediction_is_correct,
           row_number() over (order by fmr.date_time desc) as rn
-        FROM marts.fact_match_results fmr 
+        FROM marts.fact_match_results fmr
         LEFT JOIN marts.dim_leagues dl ON fmr.league_id = dl.league_id 
         LEFT JOIN marts.dim_countries dc ON dl.country_id = dc.country_id 
         LEFT JOIN marts.dim_teams dth ON fmr.home_team_id = dth.team_id AND fmr.league_id = dth.league_id
         LEFT JOIN marts.dim_teams dta ON fmr.away_team_id = dta.team_id AND fmr.league_id = dta.league_id 
         WHERE (fmr.home_team_id = $1 OR fmr.away_team_id = $1)
           AND fmr.league_id = $2
-          AND fmr.date_time::date <= (date_trunc('week', now())::date - 1)
+          AND fmr.date_time::date <= (date_trunc('week', now() AT TIME ZONE 'Europe/Madrid')::date - 1)
       ) t
       WHERE rn <= $3
       ORDER BY date_time DESC;

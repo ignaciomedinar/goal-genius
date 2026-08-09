@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { Link } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { Match } from '@/types';
-import { formatDate, formatTime, formatPercentage } from '@/lib/utils';
+import { formatPercentage } from '@/lib/utils';
+import { LocalDate, LocalTime } from '@/components/LocalDateTime';
 
 const mockMatches: Match[] = [
   {
@@ -97,6 +98,7 @@ const TopMatchesSection = () => {
             predictedAwayScore: match.pag ?? match.prediction_goals_away,
             matchDate: match.date_time ? new Date(match.date_time).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             matchTime: match.date_time ? new Date(match.date_time).toTimeString().split(' ')[0].slice(0, 5) : '15:00',
+            date_time: match.date_time,
             league: match.league_name,
             confederation: match.country_name || 'UEFA',
             probability: match.max_prob ? match.max_prob * 100 : 0,
@@ -209,11 +211,11 @@ const TopMatchesSection = () => {
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
                       <div className="flex items-center">
                         <span className="mr-1">📅</span>
-                        {formatDate(match.matchDate)}
+                        <LocalDate date={match.date_time || match.matchDate} />
                       </div>
                       <div className="flex items-center">
                         <span className="mr-1">🕒</span>
-                        {formatTime(match.matchDate + 'T' + match.matchTime)}
+                        <LocalTime date={match.date_time || match.matchDate} />
                       </div>
                     </div>
 

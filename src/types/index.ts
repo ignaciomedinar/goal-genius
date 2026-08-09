@@ -8,6 +8,12 @@ export interface Match {
   predictedAwayScore?: number;
   matchDate: string;
   matchTime: string;
+  // Raw ISO instant from the API, kept alongside matchDate/matchTime so
+  // display code can format date+time from a single source instead of
+  // splitting into separate UTC-date/local-time strings and reformatting
+  // each -- that split is what causes the calendar day to shift near
+  // midnight for visitors on either side of UTC.
+  date_time?: string;
   league: string;
   confederation: string;
   probability?: number;

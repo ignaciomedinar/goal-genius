@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import { getMatchDetails, getMatchOdds, getTeamLastGames } from '@/lib/database';
-import { formatDate, formatTime, formatPercentage } from '@/lib/utils';
+import { formatDate, formatPercentage } from '@/lib/utils';
+import { LocalDate, LocalTime } from '@/components/LocalDateTime';
 
 const baseUrl = 'https://www.goal-genius.net';
 
@@ -136,8 +137,8 @@ export default async function MatchDetailPage({ params }: Props) {
             </div>
 
             <div className="flex justify-center gap-8 mt-6 text-sm text-muted-foreground">
-              <div>📅 {formatDate(match.date_time)}</div>
-              <div>🕒 {formatTime(match.date_time)}</div>
+              <div>📅 <LocalDate date={match.date_time} /></div>
+              <div>🕒 <LocalTime date={match.date_time} /></div>
               <div>📈 {formatPercentage(match.max_prob * 100)} {t('confidence')}</div>
             </div>
 
@@ -250,7 +251,7 @@ function TeamForm({
                   <div className="text-sm font-medium">
                     {game.home_team} vs {game.away_team}
                   </div>
-                  <div className="text-xs text-muted-foreground">{formatDate(game.date_time)}</div>
+                  <div className="text-xs text-muted-foreground"><LocalDate date={game.date_time} /></div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-bold">

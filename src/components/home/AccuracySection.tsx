@@ -83,6 +83,7 @@ const AccuracySection = () => {
             predictedAwayScore: match.pag ?? match.prediction_goals_away,
             matchDate: match.date_time ? new Date(match.date_time).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             matchTime: match.date_time ? new Date(match.date_time).toTimeString().split(' ')[0].slice(0, 5) : '15:00',
+            date_time: match.date_time,
             league: match.league_name,
             confederation: match.country_name || 'UEFA',
             probability: match.max_prob ? match.max_prob * 100 : 0,
