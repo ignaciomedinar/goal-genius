@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Inter, Poppins } from 'next/font/google';
-import Script from 'next/script';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -10,6 +9,8 @@ import { routing } from '@/i18n/routing';
 import '../globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import CookieConsent from '@/components/CookieConsent';
+import ConsentScripts from '@/components/ConsentScripts';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const poppins = Poppins({
@@ -109,21 +110,7 @@ export default async function LocaleLayout({ children, params }: Props) {
             }),
           }}
         />
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7649332633911489"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
-        <Script src="https://www.googletagmanager.com/gtag/js?id=G-WRCQ41KVM8" strategy="afterInteractive" />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-WRCQ41KVM8');
-          `}
-        </Script>
+        <ConsentScripts />
 
         <NextIntlClientProvider messages={messages}>
           <div className="flex flex-col min-h-screen">
@@ -131,6 +118,7 @@ export default async function LocaleLayout({ children, params }: Props) {
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
+          <CookieConsent />
         </NextIntlClientProvider>
       </body>
     </html>

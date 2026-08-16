@@ -312,6 +312,12 @@
     "ctaPredictions": "Ver Predicciones",
     "ctaAccuracy": "Nuestro Historial de Precisión"
   },
+  "cookieConsent": {
+    "message": "Usamos cookies para analizar el tráfico del sitio y mostrar anuncios relevantes. Las cookies de análisis y publicidad solo se cargan si las aceptas.",
+    "learnMore": "Más información",
+    "accept": "Aceptar",
+    "decline": "Rechazar"
+  },
   "privacy": {
     "badge": "Legal",
     "title": "Política de Privacidad",
